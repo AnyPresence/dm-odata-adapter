@@ -21,22 +21,48 @@ module DataMapper
           else
             DataMapper.logger.debug("Cache has class for model #{model}")
           end
-          instance = klass.new
-          hash.each do |field, value|
-            instance.send("#{field}=",value)
-          end
+          instance = to_ruby_odata_instance(klass.new, hash)
           DataMapper.logger.debug("Returning instance #{instance.instance_variables}")
           instance
         end
 
-        def resource_from_remote(model, hash)
-         DataMapper.logger.debug("resource_from_remote(#{model}, #{hash})")
+        def collection_from_remote(model, collection)
+          DataMapper.logger.debug("resource_from_remote(#{model}, #{collection})")
+          resources = []
+          collection.each do |remote_instance|
+            resources << resource_from_remote(model, remote_instance)
+          end
+          resources
         end
-
+        
+        def resource_from_remote(model,instance)
+          DataMapper.logger.debug("resource_from_remote(#{model}, #{instance})")
+          dm_hash = {}
+          model.properties.each do |property|
+            value = instance.send(property.field.to_sym)
+            dm_hash[property] = property.typecast(value)
+          end
+          dm_hash
+        end
+        
         private
+        
         def build_class_name(model)
           "#{model}"
 	      end
+	      
+	      def to_ruby_odata_instance(instance, hash)
+	        hash.each do |field, value|
+	          DataMapper.logger.debug("Setting #{field} = #{value}")
+            instance.send("#{field}=",value)
+          end
+          instance
+        end
+        
+        def from_ruby_odata_instance(klass, hash)
+          
+        end
+        
       end
     end
   end

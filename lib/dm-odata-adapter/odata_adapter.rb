@@ -57,12 +57,16 @@ module DataMapper
             the_properties[serial.field] = id
             DataMapper.logger.debug("Properties are #{the_properties.inspect}")
             instance = resource_to_remote(model, the_properties)
-            DataMapper.logger.debug("Instance is #{instance.methods}")
-            
             @service.send(create_method_name, instance)
-            @service.save_changes
-            serial.set(resource,id)
-            created += 1
+            remote_instance = @service.save_changes
+            DataMapper.logger.debug("Remote instance saved_changes returned is #{remote_instance.inspect}")
+            if remote_instance == true
+              DataMapper.logger.debug("Something went wrong while creating instance.")
+            else remote_instance.first.__metadata.has_key?(:uri)
+              serial.set(resource,id)
+              DataMapper.logger.debug("Created #{instance.inspect}")
+              created += 1
+            end
           rescue => e
             trace = e.backtrace.join("\n")
             DataMapper.logger.error("Failed to create resource: #{e.message}")  
@@ -96,7 +100,8 @@ module DataMapper
           query_method = build_query_method_name(storage_name)
           DataMapper.logger.debug("Using query method #{query_method}")
           @service.send(query_method)
-          records = @service.execute
+          odata_collection = @service.execute
+          records = collection_from_remote(model,odata_collection)
           DataMapper.logger.debug("Records are #{records.inspect}")
         rescue => e
           trace = e.backtrace.join("\n")
