@@ -13,18 +13,17 @@ module DataMapper
         host = "#{host}:#{port}" if port
         path = @options.fetch(:path)
         service_url = "#{scheme}://#{host}#{path}" 
-	username = @options.fetch(:username,nil)
-        auth_token = @options.fetch(:auth_token,nil) if username
-	if auth_token.nil? or auth_token.empty?
+	      username = @options.fetch(:username,nil)
+        password = @options.fetch(:password,nil) if username
+        json_type = @options.fetch(:json_type)
+	      if username.nil? && password.nil?
           DataMapper.logger.debug("Connecting using #{service_url}")
-          @service = OData::Service.new(service_url)
+          @service = OData::Service.new(service_url, :json_type => json_type)
         else
-	  DataMapper.logger.debug("Connecting using #{service_url} as #{username} with auth token #{auth_token}")
-          @service = OData::Service.new(service_url, :username => username, :additional_params => {:authtoken => auth_token}
-)
+	        DataMapper.logger.debug("Connecting using #{service_url} as #{username} with a #{password.size} letter password")
+          @service = OData::Service.new(service_url, :username => username, :password => password, :json_type => json_type)
         end
-	@processed_classes = Hash.new
-        #DataMapper.logger.debug("Initialized service to #{@service.inspect}")
+	      @processed_classes = Hash.new
       end
 
       # Persists one or many new resources
@@ -43,6 +42,7 @@ module DataMapper
       # @api semipublic  
       def create(resources)
         created = 0
+        
         resources.each do |resource|
           model = resource.model
           serial = model.serial
@@ -53,11 +53,15 @@ module DataMapper
             create_method_name = build_create_method_name(storage_name)
             DataMapper.logger.debug("Built create method name #{create_method_name}")
             the_properties = resource.attributes(key_on=:field)
-            instance = resource_to_remote(model,the_properties)
-            DataMapper.logger.debug("Instance is #{instance.inspect}")
-            @service.send(create_method_name.to_sym,instance)
-	    instance = @service.save_changes
-            DataMapper.logger.debug("Instance after create call is #{instance.inspect}")
+            id = SecureRandom.hex
+            the_properties[serial.field] = id
+            DataMapper.logger.debug("Properties are #{the_properties.inspect}")
+            instance = resource_to_remote(model, the_properties)
+            DataMapper.logger.debug("Instance is #{instance.methods}")
+            
+            @service.send(create_method_name, instance)
+            @service.save_changes
+            serial.set(resource,id)
             created += 1
           rescue => e
             trace = e.backtrace.join("\n")
@@ -65,6 +69,7 @@ module DataMapper
             DataMapper.logger.error(trace)  
           end
         end
+        
         created
       end
       
