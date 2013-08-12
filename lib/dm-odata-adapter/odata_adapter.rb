@@ -73,10 +73,53 @@ module DataMapper
         created
       end
       
-
-      def build_create_method_name(storage_name)
-        "AddTo#{camelize(pluralize(storage_name.to_s))}"
+      # Reads one or many resources from a datastore
+      #
+      # @example
+      #   adapter.read(query)  # => [ { 'name' => 'Dan Kubb' } ]
+      #
+      # Adapters provide specific implementation of this method
+      #
+      # @param [Query] query
+      #   the query to match resources in the datastore
+      #
+      # @return [Enumerable<Hash>]
+      #   an array of hashes to become resources
+      #
+      # @api semipublic
+      def read(query)
+        DataMapper.logger.debug("Read #{query.inspect} and its model is #{query.model.inspect}")
+        model = query.model
+        storage_name = model.storage_name(query.repository)
+        records = []
+        begin
+          query_method = build_query_method_name(storage_name)
+          DataMapper.logger.debug("Using query method #{query_method}")
+          @service.send(query_method)
+          records = @service.execute
+          DataMapper.logger.debug("Records are #{records.inspect}")
+        rescue => e
+          trace = e.backtrace.join("\n")
+          DataMapper.logger.error("Failed to query: #{e.message}")  
+          DataMapper.logger.error(trace)
+        end
+        return records
       end
+
+      private 
+      
+      def build_create_method_name(storage_name)
+        "AddTo#{collection_name(storage_name)}".to_sym
+      end
+      
+      def build_query_method_name(storage_name)
+        collection_name(storage_name).to_sym
+      end
+      
+      def collection_name(storage_name)
+        camelize(pluralize(storage_name.to_s))
+      end
+      
     end
   end
 end
