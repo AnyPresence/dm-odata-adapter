@@ -20,6 +20,12 @@ describe DataMapper::Adapters::OdataAdapter do
       heffalump.save
       heffalump.id.should_not be_nil
     end
-
+    
+    it 'should not set the identity field for the resource if validation fails' do
+      heffalump = Heffalump.new(:num_spots => 3)
+      heffalump.save
+      heffalump.id.should be_nil
+    end
+    
   end
 end
