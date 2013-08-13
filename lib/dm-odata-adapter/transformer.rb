@@ -1,4 +1,5 @@
 module Container
+  # Holder module for generated conversion classes
 end
 
 module DataMapper
