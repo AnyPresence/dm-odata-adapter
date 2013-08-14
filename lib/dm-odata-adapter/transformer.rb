@@ -26,7 +26,16 @@ module DataMapper
           DataMapper.logger.debug("Returning instance #{instance.instance_variables}")
           instance
         end
-
+        
+        def update_remote_instance(remote_instance, hash)
+          DataMapper.logger.debug("fill_remote_instance is about to update \nInstance: #{remote_instance}\nWith: #{hash.inspect}")
+          hash.each do |property, value|
+	          DataMapper.logger.debug("Updating #{property.field} = #{value}")
+            remote_instance.send("#{property.field}=", property.typecast(value))
+          end
+          remote_instance
+        end
+        
         def collection_from_remote(model, array)
           DataMapper.logger.debug("collection_from_remote is about to parse\n #{array.inspect}")
           field_to_property = make_field_to_property_hash(model)
@@ -34,6 +43,8 @@ module DataMapper
             record_from_remote(remote_instance, field_to_property)
           end
         end
+        
+        private 
         
         def record_from_remote(instance, field_to_property)
           DataMapper.logger.debug("record_from_remote using:\n#{field_to_property}\nAnd #{instance.inspect}")
@@ -50,8 +61,6 @@ module DataMapper
           end
           record
         end
-                
-        private
         
         def make_field_to_property_hash(model)
           Hash[ model.properties(model.default_repository_name).map { |p| [ p.field, p ] } ]
@@ -68,11 +77,6 @@ module DataMapper
           end
           instance
         end
-        
-        def from_ruby_odata_instance(klass, hash)
-          
-        end
-        
       end
     end
   end

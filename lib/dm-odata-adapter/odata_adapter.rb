@@ -63,10 +63,10 @@ module DataMapper
             @service.send(create_method_name, instance)
             remote_instance = @service.save_changes
             DataMapper.logger.debug("Remote instance saved_changes returned is #{remote_instance.inspect}")
-            if remote_instance == true # A failed save returns true for some reason
+            if remote_instance == true # A failed create returns true for some reason
               DataMapper.logger.debug("Something went wrong while creating instance.")
             else remote_instance.first.__metadata.has_key?(:uri) # Actual success has metadata with a URI
-              serial.set!(resource, id)
+              initialize_serial(resource, id)
               DataMapper.logger.debug("Created #{resource.inspect}")
               created += 1
             end
@@ -131,10 +131,34 @@ module DataMapper
       #
       # @api semipublic
       def update(attributes, collection)
+        updated = 0
         DataMapper.logger.debug("Update called with:\nAttributes #{attributes.inspect} \nCollection: #{collection.inspect}")
         collection.select do |resource|
-          DataMapper.logger.debug("About to call update with #{resource.attributes}")
-        end.size
+          model = resource.model
+          serial = model.serial
+          query_method = build_query_method_name(model.storage_name(resource.repository))
+          id = serial.get(resource)
+          DataMapper.logger.debug("About to query with ID #{id}")
+          @service.send(query_method, id)
+          odata_instance = @service.execute.first
+          DataMapper.logger.debug("About to call update on #{odata_instance}")
+          odata_instance = update_remote_instance(odata_instance, attributes)
+          @service.update_object(odata_instance)
+          DataMapper.logger.debug("About to save #{odata_instance}")
+          result = @service.save_changes
+          
+          DataMapper.logger.debug("Result of update call #{result}")
+          if result
+            updated += 1
+            attributes.each do |property, value|
+              property.set!(resource, property.typecast(value))
+            end
+          else
+            DataMapper.logger.error("Updating #{resource} failed")
+          end
+          
+        end
+        updated
       end
     end
   end

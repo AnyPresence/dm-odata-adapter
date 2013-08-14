@@ -3,6 +3,7 @@ module DataMapper
     module Odata
       module IdentityBroker
         
+        # This is needed until HANA supports auto generated serials
         class Serial
           attr_accessor :CLASS, :SEQUENCE_VALUE
           
