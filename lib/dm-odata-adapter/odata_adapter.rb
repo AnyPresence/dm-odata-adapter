@@ -26,9 +26,8 @@ module DataMapper
           @service = OData::Service.new(service_url, :username => username, :password => password, :json_type => json_type)
         end
 	      @processed_classes = Hash.new
-	      @id_seed = 0
       end
-
+      
       # Persists one or many new resources
       #
       # @example
