@@ -101,7 +101,7 @@ module DataMapper
         begin
           query_method = build_query_method_name(storage_name)
           DataMapper.logger.debug("Using query method #{query_method}")
-          @service.send(query_method)
+          build_query(query_method, query)
           odata_collection = @service.execute
           records = collection_from_remote(model,odata_collection)
           DataMapper.logger.debug("Records are #{records.inspect}")
