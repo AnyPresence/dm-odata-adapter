@@ -27,26 +27,35 @@ module DataMapper
           instance
         end
 
-        def collection_from_remote(model, collection)
-          DataMapper.logger.debug("resource_from_remote(#{model}, #{collection})")
-          resources = []
-          collection.each do |remote_instance|
-            resources << resource_from_remote(model, remote_instance)
+        def collection_from_remote(model, array)
+          DataMapper.logger.debug("collection_from_remote is about to parse\n #{array.inspect}")
+          field_to_property = make_field_to_property_hash(model)
+          array.collect do |remote_instance|
+            record_from_remote(remote_instance, field_to_property)
           end
-          resources
         end
         
-        def resource_from_remote(model,instance)
-          DataMapper.logger.debug("resource_from_remote(#{model}, #{instance})")
-          dm_hash = {}
-          model.properties.each do |property|
-            value = instance.send(property.field.to_sym)
-            dm_hash[property] = property.typecast(value)
+        def record_from_remote(instance, field_to_property)
+          DataMapper.logger.debug("record_from_remote using:\n#{field_to_property}\nAnd #{instance.inspect}")
+          record = {}
+          field_to_property.each do |field, property|
+            name = property.name
+            next unless value = instance.send(field.to_sym)
+            DataMapper.logger.debug("#{field} = #{value}")
+            if property.instance_of? DataMapper::Property::Object
+              raise "Array properties are not yet supported!"
+            else
+              record[field] = property.typecast(value)
+            end
           end
-          dm_hash
+          record
         end
-        
+                
         private
+        
+        def make_field_to_property_hash(model)
+          Hash[ model.properties(model.default_repository_name).map { |p| [ p.field, p ] } ]
+        end
         
         def build_class_name(model)
           "#{model}"

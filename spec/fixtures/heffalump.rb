@@ -1,4 +1,4 @@
-class Heffalump
+class ::Heffalump
   include ::DataMapper::Resource
 
   property :id, Serial, field: 'ID'

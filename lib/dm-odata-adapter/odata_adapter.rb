@@ -4,7 +4,8 @@ module DataMapper
       include ::DataMapper::Inflector
       include ::DataMapper::Adapters::Odata::Transformer
       include ::DataMapper::Adapters::Odata::Builder
-      
+      include ::DataMapper::Adapters::Odata::IdentityBroker
+            
       def initialize(name, options)
         super
         @options = options
@@ -25,6 +26,7 @@ module DataMapper
           @service = OData::Service.new(service_url, :username => username, :password => password, :json_type => json_type)
         end
 	      @processed_classes = Hash.new
+	      @id_seed = 0
       end
 
       # Persists one or many new resources
@@ -54,18 +56,18 @@ module DataMapper
             create_method_name = build_create_method_name(storage_name)
             DataMapper.logger.debug("Built create method name #{create_method_name}")
             the_properties = resource.attributes(key_on=:field)
-            id = SecureRandom.hex
+            id = generate_unique_id(storage_name)
             the_properties[serial.field] = id
             DataMapper.logger.debug("Properties are #{the_properties.inspect}")
             instance = resource_to_remote(model, the_properties)
             @service.send(create_method_name, instance)
             remote_instance = @service.save_changes
             DataMapper.logger.debug("Remote instance saved_changes returned is #{remote_instance.inspect}")
-            if remote_instance == true
+            if remote_instance == true # A failed save returns true for some reason
               DataMapper.logger.debug("Something went wrong while creating instance.")
-            else remote_instance.first.__metadata.has_key?(:uri)
-              serial.set(resource,id)
-              DataMapper.logger.debug("Created #{instance.inspect}")
+            else remote_instance.first.__metadata.has_key?(:uri) # Actual success has metadata with a URI
+              serial.set!(resource, id)
+              DataMapper.logger.debug("Created #{resource.inspect}")
               created += 1
             end
           rescue => e
@@ -112,7 +114,28 @@ module DataMapper
         return records
       end
 
-      
+      # Updates one or many existing resources
+      #
+      # @example
+      #   adapter.update(attributes, collection)  # => 1
+      #
+      # Adapters provide specific implementation of this method
+      #
+      # @param [Hash(Property => Object)] attributes
+      #   hash of attribute values to set, keyed by Property
+      # @param [Collection] collection
+      #   collection of records to be updated
+      #
+      # @return [Integer]
+      #   the number of records updated
+      #
+      # @api semipublic
+      def update(attributes, collection)
+        DataMapper.logger.debug("Update called with:\nAttributes #{attributes.inspect} \nCollection: #{collection.inspect}")
+        collection.select do |resource|
+          DataMapper.logger.debug("About to call update with #{resource.attributes}")
+        end.size
+      end
     end
   end
 end
