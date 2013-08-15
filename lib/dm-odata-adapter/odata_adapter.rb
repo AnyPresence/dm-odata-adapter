@@ -26,6 +26,7 @@ module DataMapper
           @service = OData::Service.new(service_url, :username => username, :password => password, :json_type => json_type)
         end
 	      @processed_classes = Hash.new
+        @id_seed = 0
       end
       
       # Persists one or many new resources
@@ -55,7 +56,7 @@ module DataMapper
             create_method_name = build_create_method_name(storage_name)
             DataMapper.logger.debug("Built create method name #{create_method_name}")
             the_properties = resource.attributes(key_on=:field)
-            id = generate_unique_id(storage_name)
+            id = generate_unique_id(resource)
             the_properties[serial.field] = id
             DataMapper.logger.debug("Properties are #{the_properties.inspect}")
             instance = resource_to_remote(model, the_properties)

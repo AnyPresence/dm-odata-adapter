@@ -121,6 +121,66 @@ describe DataMapper::Adapters::OdataAdapter do
           Heffalump.all(:num_spots => 1...5).should_not be_include(@five)
         end
       end
+      
+      describe 'not' do
+        it 'should be able to search for objects with not equal value' do
+          Heffalump.all(:color.not => 'red').should_not be_include(@red)
+        end
+
+        it 'should include objects that are not like the value' do
+          Heffalump.all(:color.not => 'black').should be_include(@red)
+        end
+
+        it 'should be able to search for objects with not nil value' do
+          Heffalump.all(:color.not => nil).should be_include(@red)
+        end
+
+        it 'should not include objects with a nil value' do
+          Heffalump.all(:color.not => nil).should_not be_include(@two)
+        end
+
+        it 'should be able to search for object with a nil value using required properties' do
+          Heffalump.all(:id.not => nil).should == [ @red, @two, @five ]
+        end
+
+        it 'should be able to search for objects not in an empty list (match all)' do
+          Heffalump.all(:color.not => []).should == [ @red, @two, @five ]
+        end
+
+        it 'should be able to search for objects in an empty list and another OR condition (match none on the empty list)' do
+          Heffalump.all(
+            :conditions => DataMapper::Query::Conditions::Operation.new(
+              :or,
+              DataMapper::Query::Conditions::Comparison.new(:in, Heffalump.properties[:color], []),
+              DataMapper::Query::Conditions::Comparison.new(:in, Heffalump.properties[:num_spots], [5])
+            )
+          ).should == [ @five ]
+        end
+
+        it 'should be able to search for objects not included in an array of values' do
+          Heffalump.all(:num_spots.not => [ 1, 3, 5, 7 ]).should be_include(@two)
+        end
+
+        it 'should be able to search for objects not included in an array of values' do
+          Heffalump.all(:num_spots.not => [ 1, 3, 5, 7 ]).should_not be_include(@five)
+        end
+
+        it 'should be able to search for objects not included in an inclusive range of values' do
+          Heffalump.all(:num_spots.not => 1..4).should be_include(@five)
+        end
+
+        it 'should be able to search for objects not included in an exclusive range of values' do
+          Heffalump.all(:num_spots.not => 1...5).should be_include(@five)
+        end
+
+        it 'should not be able to search for values not included in an inclusive range of values' do
+          Heffalump.all(:num_spots.not => 1..5).should_not be_include(@five)
+        end
+
+        it 'should not be able to search for values not included in an exclusive range of values' do
+          Heffalump.all(:num_spots.not => 1...6).should_not be_include(@five)
+        end
+      end
     end
   end      
 end

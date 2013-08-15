@@ -3,6 +3,15 @@ module DataMapper
     module Odata
       module IdentityBroker
         
+        def generate_unique_id(resource)
+          serial = resource.model.serial
+          if (existing_value = serial.get(resource)).nil?
+            return @id_seed += 1
+          else
+            return existing_value
+          end
+        end
+=begin        
         # This is needed until HANA supports auto generated serials
         class Serial
           attr_accessor :CLASS, :SEQUENCE_VALUE
@@ -50,7 +59,7 @@ module DataMapper
           raise "Error creating new sequence entry for #{class_name}!" if instance == true
           serial
         end
-        
+=end        
       end
     end
   end
