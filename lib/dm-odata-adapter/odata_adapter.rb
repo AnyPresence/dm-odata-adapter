@@ -159,6 +159,49 @@ module DataMapper
         end
         updated
       end
+      
+      # Deletes one or many existing resources
+      #
+      # @example
+      #   adapter.delete(collection)  # => 1
+      #
+      # Adapters provide specific implementation of this method
+      #
+      # @param [Collection] collection
+      #   collection of records to be deleted
+      #
+      # @return [Integer]
+      #   the number of records deleted
+      #
+      # @api semipublic
+      def delete(collection)
+        DataMapper.logger.debug("Delete called with: #{collection.inspect}")
+        deleted = 0
+         
+        collection.each do |resource|
+          model = resource.model
+          serial = model.serial
+          query_method = build_query_method_name(model.storage_name(resource.repository))
+          id = serial.get(resource)
+          
+          begin
+            DataMapper.logger.debug("About to query with ID #{id}")
+            @service.send(query_method, id)
+            odata_instance = @service.execute.first
+            DataMapper.logger.debug("About to call delete on #{odata_instance}")
+
+            @service.delete_object(odata_instance)
+            result = @service.save_changes
+            DataMapper.logger.debug("Result of delete is #{result}")
+            deleted += 1 if result
+          rescue => e
+            DataMapper.logger.error("Failure while deleting #{e.inspect}")
+          end
+        end
+
+        deleted
+      end
+      
     end
   end
 end

@@ -77,5 +77,22 @@ describe DataMapper::Adapters::OdataAdapter do
       Heffalump.get(*@heffalump.key).color.should == color
     end
   end
-      
+  
+  describe '#delete' do
+    before do
+      @heffalump = Heffalump.create(:color => 'forest green')
+    end
+
+    it 'should not raise any errors' do
+      lambda {
+        @heffalump.destroy
+      }.should_not raise_error
+    end
+
+    it 'should delete the requested resource' do
+      id = @heffalump.id
+      @heffalump.destroy
+      Heffalump.get(id).should be_nil
+    end
+  end   
 end
