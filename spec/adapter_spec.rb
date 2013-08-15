@@ -95,4 +95,32 @@ describe DataMapper::Adapters::OdataAdapter do
       Heffalump.get(id).should be_nil
     end
   end   
+
+  describe 'query matching' do
+    before :all do
+      @red  = Heffalump.create(:color => 'red')
+      @two  = Heffalump.create(:color => 'rouge', :num_spots => 2)
+      @five = Heffalump.create(:color => 'noir', :num_spots => 5)
+    end
+
+    describe 'conditions' do
+      describe 'eql' do
+        it 'should be able to search for objects included in an inclusive range of values' do
+          Heffalump.all(:num_spots => 1..5).should be_include(@five)
+        end
+
+        it 'should be able to search for objects included in an exclusive range of values' do
+          Heffalump.all(:num_spots => 1...6).should be_include(@five)
+        end
+
+        it 'should not be able to search for values not included in an inclusive range of values' do
+          Heffalump.all(:num_spots => 1..4).should_not be_include(@five)
+        end
+
+        it 'should not be able to search for values not included in an exclusive range of values' do
+          Heffalump.all(:num_spots => 1...5).should_not be_include(@five)
+        end
+      end
+    end
+  end      
 end
