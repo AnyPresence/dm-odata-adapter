@@ -198,7 +198,7 @@ module DataMapper
             DataMapper.logger.error("Failure while deleting #{e.inspect}")
           end
         end
-
+        DataMapper.logger.debug("Deleted #{deleted} instances")
         deleted
       end
       
