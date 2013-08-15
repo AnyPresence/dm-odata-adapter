@@ -20,7 +20,7 @@ module DataMapper
           DataMapper.logger.debug("build_query starting with #{query_builder.inspect}")
           build_conditions(query_builder, query.conditions) if query.conditions
           build_order(query_builder, query.order) if query.order
-          build_limit_and_offset(query_builder, query.limit, query.offset) if query.limit
+          build_limit_and_offset(query_builder, query.limit, query.offset)
           DataMapper.logger.debug("build_query ENDING with #{query_builder.inspect}")
         end
         
@@ -29,7 +29,7 @@ module DataMapper
         def build_conditions(query_builder, conditions)
           conditions.each do |condition|
             if condition.instance_of? ::DataMapper::Query::Conditions::EqualToComparison
-              query_builder.filter("#{condition.subject.field} eq '#{condition.loaded_value}'")
+              query_builder.filter("#{condition.subject.field} eq #{condition.loaded_value}")
             elsif condition.instance_of? ::DataMapper::Query::Conditions::InclusiveRange
               raise "BOOM"
             else
@@ -45,7 +45,8 @@ module DataMapper
         end
         
         def build_limit_and_offset(query_builder, limit, offset)
-          query_builder.skip(offset).top(limit)
+          query_builder.skip(offset) if offset and offset > 0
+          query_builder.top(limit) if limit and limit > 0
         end
       end
     end
