@@ -26,37 +26,45 @@ module DataMapper
         
         private
         
-        #<DataMapper::Query @repository=:default @model=Heffalump @fields=[#<DataMapper::Property::Serial @model=Heffalump @name=:id>, #<DataMapper::Property::String @model=Heffalump @name=:color>, #<DataMapper::Property::Integer @model=Heffalump @name=:num_spots>, #<DataMapper::Property::Boolean @model=Heffalump @name=:striped>] @links=[] @conditions=#<DataMapper::Query::Conditions::AndOperation:0x007fcad3bc6830 @operands=
-        #<Set: {#<DataMapper::Query::Conditions::InclusionComparison @subject=#<DataMapper::Property::Integer @model=Heffalump @name=:num_spots> @dumped_value=1..5 @loaded_value=1..5>}>> @order=[#<DataMapper::Query::Direction @target=#<DataMapper::Property::Serial @model=Heffalump @name=:id> @operator=:asc>] @limit=nil @offset=0 @reload=false @unique=false> 
-        
-        
-       # @conditions=#<DataMapper::Query::Conditions::AndOperation:0x007f9ddaa28788 @operands=#<Set: {#<DataMapper::Query::Conditions::NotOperation:0x007f9ddaa28ad0 @operands=#<Set: {#<DataMapper::Query::Conditions::EqualToComparison @subject=#<DataMapper::Property::String @model=Heffalump @name=:color> @dumped_value="black" @loaded_value="black">}>, @parent=#<DataMapper::Query::Conditions::AndOperation:0x007f9ddaa28788 ...>>}>>
         def build_conditions(query_builder, conditions)
           conditions.each do |condition|
             build_condition(query_builder, condition)
           end
         end
         
-        def build_condition(query_builder, condition)
+        def build_condition(query_builder, condition, negated=false)
           if condition.instance_of? ::DataMapper::Query::Conditions::EqualToComparison
             subject = condition.subject.field
             value = condition.loaded_value
-            query_builder.filter("#{subject} eq #{value}")
+            query_builder.filter("#{subject} #{negated ? 'ne' : 'eq'} #{quote(value)}")
           elsif condition.instance_of? ::DataMapper::Query::Conditions::InclusionComparison
             subject = condition.subject.field
             min = condition.loaded_value.min
             max = condition.loaded_value.max
-            query_builder.filter("#{subject} ge #{min}").filter("#{subject} le #{max}")
+            query_builder.filter("#{subject} #{negated ? 'lt' : 'ge'} #{quote(min)}")
+            query_builder.filter("#{subject} #{negated ? 'gt' : 'le'} #{quote(max)}")
           elsif condition.instance_of? ::DataMapper::Query::Conditions::NotOperation
-            
+            condition.operands.each do |operand|
+              build_condition(query_builder,operand,true)
+            end
           else
             raise "build_condition #{condition.class} is not yet supported!"
           end
         end
         
+        def quote(value)
+          if value.nil?
+            return "null"
+          elsif value.instance_of? String
+            return "'#{value}'"
+          else
+            return value
+          end
+        end
+        
         def build_order(query_builder, order_by_array)
           order_by_array.each do |order|
-            query_builder.order_by(order.target.field)
+            query_builder.order_by("#{order.target.field} #{order.operator}")
           end
         end
         

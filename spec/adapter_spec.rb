@@ -5,6 +5,15 @@ describe DataMapper::Adapters::OdataAdapter do
   before :all do
 
    @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-221-211-251.compute-1.amazonaws.com', :port => 8000, :path => '/datamapper/datamapper/datamapper.xsodata', :username => "SYSTEM", :password => 'P455w0rd', :json_type => 'application/json;charset=utf-8')
+   service_url = "http://ec2-54-221-211-251.compute-1.amazonaws.com:8000/datamapper/datamapper/datamapper.xsodata" 
+=begin
+   @service = OData::Service.new(service_url, :username => 'SYSTEM', :password => 'P455w0rd', :json_type => 'application/json;charset=utf-8')
+   query = @service.Heffalumps
+   query.filter("COLOR eq 'null'")
+   results = @service.execute
+   puts "========= #{results.inspect}"
+=end
+   Heffalump.all.each{|h| h.destroy }
   end
   
   describe '#create' do
@@ -22,7 +31,7 @@ describe DataMapper::Adapters::OdataAdapter do
     end
     
     it 'should not set the identity field for the resource if validation fails' do
-      heffalump = Heffalump.new(:num_spots => 3)
+      heffalump = Heffalump.new( :num_spots => "ABCDEFG")
       heffalump.save
       heffalump.id.should be_nil
     end
@@ -99,8 +108,8 @@ describe DataMapper::Adapters::OdataAdapter do
   describe 'query matching' do
     before :all do
       @red  = Heffalump.create(:color => 'red')
-      @two  = Heffalump.create(:color => 'rouge', :num_spots => 2)
-      @five = Heffalump.create(:color => 'noir', :num_spots => 5)
+      @two  = Heffalump.create(:num_spots => 2)
+      @five = Heffalump.create(:num_spots => 5)
     end
 
     describe 'conditions' do
