@@ -9,7 +9,7 @@ describe DataMapper::Adapters::OdataAdapter do
 =begin
    @service = OData::Service.new(service_url, :username => 'SYSTEM', :password => 'P455w0rd', :json_type => 'application/json;charset=utf-8')
    query = @service.Heffalumps
-   query.filter("COLOR eq 'null'")
+   query.filter("COLOR eq 'Blue' or ( 1 eq 1 and COLOR eq 'Orange' )")
    results = @service.execute
    puts "========= #{results.inspect}"
 =end
