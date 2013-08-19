@@ -43,18 +43,34 @@ module DataMapper
             build_conditions(query_string, condition.operands)
             query_string << " ) "
           elsif condition.instance_of? ::DataMapper::Query::Conditions::OrOperation
-            query_string << " or ( "
-            build_conditions(query_string, condition.operands)
-            query_string << " ) "
+            array = condition.operands.to_a
+            filters = array.collect do |operand|
+              filter = ""
+              build_condition(filter, operand)
+              filter
+            end
+            query_string << filters.join(" or ")
           elsif condition.instance_of? ::DataMapper::Query::Conditions::EqualToComparison
             subject = condition.subject.field
             value = condition.loaded_value
             query_string << "#{subject} eq #{quote(value)}"
           elsif condition.instance_of? ::DataMapper::Query::Conditions::InclusionComparison
             subject = condition.subject.field
-            min = condition.loaded_value.min
-            max = condition.loaded_value.max
-            query_string << " ( #{subject} ge #{quote(min)} and #{subject} le #{quote(max)} ) "
+            if (array = condition.loaded_value).instance_of? Array
+              if array.empty?
+                raise "Unsupported query feature!" unless subject.instance_of? String
+                query_string << "length(#{subject}) eq 0 "
+              else
+                ors = array.collect do |value|
+                  "#{subject} eq #{quote(value)}"
+                end
+                query_string << " ( #{ors.join(' or ')} ) "
+              end
+            elsif (range = condition.loaded_value).instance_of? Range
+              query_string << " ( #{subject} ge #{quote(range.min)} and #{subject} le #{quote(range.max)} ) "
+            else
+              raise "Unsupported query feature! #{condition.inspect}"
+            end
           elsif condition.instance_of? ::DataMapper::Query::Conditions::NotOperation
             query_string << " not ( "
             build_conditions(query_string, condition.operands)
