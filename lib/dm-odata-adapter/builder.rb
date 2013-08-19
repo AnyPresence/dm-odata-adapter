@@ -30,7 +30,7 @@ module DataMapper
         end
         
         private
-# @conditions=#<DataMapper::Query::Conditions::AndOperation:0x007fa52e2339c8 @operands=#<Set: {#<DataMapper::Query::Conditions::OrOperation:0x007fa52e22a620 @operands=#<Set: {#<DataMapper::Query::Conditions::InclusionComparison @subject=#<DataMapper::Property::String @model=Heffalump @name=:color> @dumped_value=[] @loaded_value=[]>, #<DataMapper::Query::Conditions::InclusionComparison @subject=#<DataMapper::Property::Integer @model=Heffalump @name=:num_spots> @dumped_value=[5] @loaded_value=[5]>}>, @parent=#<DataMapper::Query::Conditions::AndOperation:0x007fa52e2339c8 ...>>}>> @order=[#<DataMapper::Query::Direction @target=#<DataMapper::Property::Serial @model=Heffalump @name=:id> @operator=:asc>] @limit=nil @offset=0 @reload=false @unique=false>        
+    
         def build_conditions(query_string, conditions)
           conditions.each do |condition|
             build_condition(query_string, condition)
