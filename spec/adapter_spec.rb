@@ -4,22 +4,24 @@ describe DataMapper::Adapters::OdataAdapter do
   
   before :all do
 
-   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-221-211-251.compute-1.amazonaws.com', :port => 8000, :path => '/datamapper/datamapper/datamapper.xsodata', :username => "SYSTEM", :password => 'P455w0rd', :json_type => 'application/json;charset=utf-8')
-   service_url = "http://ec2-54-221-211-251.compute-1.amazonaws.com:8000/datamapper/datamapper/datamapper.xsodata" 
+   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-221-211-251.compute-1.amazonaws.com', :port => 8000, :path => '/datamapper/datamapper/datamapper.xsodata', :username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'], :json_type => 'application/json;charset=utf-8', :builder => :Hana)
+   
 =begin
-   @service = OData::Service.new(service_url, :username => 'SYSTEM', :password => 'P455w0rd', :json_type => 'application/json;charset=utf-8')
-   query = @service.Heffalumps
-   query.filter("COLOR eq 'Blue' or ( 1 eq 1 and COLOR eq 'Orange' )")
+   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'https', :host => 'sapes1.sapdevcenter.com', :path => '/sap/opu/odata/sap/ZGWSAMPLE_SRV/', :username => ENV['NETWEAVER_GATEWAY_USERNAME'], :password => ENV['NETWEAVER_GATEWAY_PASSWORD'], :json_type => 'application/json', :builder => :Netweaver)
+   service_url = "https://sapes1.sapdevcenter.com/sap/opu/odata/sap/ZGWSAMPLE_SRV/" 
+   @service = OData::Service.new(service_url, :username => ENV['NETWEAVER_GATEWAY_USERNAME'], :password => ENV['NETWEAVER_GATEWAY_PASSWORD'])
+   query = @service.ProductCollection
+   #query.filter("ProductId eq 'HT-1000")
    results = @service.execute
-   puts "========= #{results.inspect}"
+   raise "========= #{results.inspect}"
 =end
-   Heffalump.all.each{|h| h.destroy }
+#   Heffalump.all.each{|h| h.destroy }
   end
-  
+
   describe '#create' do
     it 'should not raise any errors' do
       lambda {
-        Heffalump.create(:color => 'Blue', :num_spots => 6)
+        Heffalump.create(:color => 'Blue')
       }.should_not raise_error
     end
 
@@ -192,4 +194,5 @@ describe DataMapper::Adapters::OdataAdapter do
       end
     end
   end      
+
 end
