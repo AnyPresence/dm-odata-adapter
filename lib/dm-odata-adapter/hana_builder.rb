@@ -12,17 +12,23 @@ module DataMapper
         end
         
         def build_equal_check(subject, value)
-          "#{subject} eq #{quote(value)}"
+          if value.nil?
+            build_null_check(subject)
+          else
+            "#{subject} eq #{quote(value)}"
+          end
         end
         
         def build_null_check(subject)
-          "length(#{subject}) eq 0 "
+          if subject.instance_of? DataMapper::Property::String
+            "length(#{subject}) eq 0 "
+          else
+            raise "Null checks are supported on String properties only."
+          end
         end
           
         def quote(value)
-          if value.nil?
-            return "null"
-          elsif value.instance_of? String
+          if value.instance_of? String
             return "'#{value}'"
           else
             return value

@@ -15,7 +15,7 @@ describe DataMapper::Adapters::OdataAdapter do
    results = @service.execute
    raise "========= #{results.inspect}"
 =end
-#   Heffalump.all.each{|h| h.destroy }
+   Heffalump.all.each{|h| h.destroy }
   end
 
   describe '#create' do
