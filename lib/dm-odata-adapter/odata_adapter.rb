@@ -13,7 +13,7 @@ module DataMapper
           @log.debug("Adding REST client debugging proxy")
           RestClient.log =  $stdout
         end
-        
+        @service_options = {}
         @options = options
         scheme = @options.fetch(:scheme)
         host = @options.fetch(:host)
@@ -21,19 +21,38 @@ module DataMapper
         host = "#{host}:#{port}" if port
         path = @options.fetch(:path)
         service_url = "#{scheme}://#{host}#{path}" 
+
 	      username = @options.fetch(:username,nil)
-        password = @options.fetch(:password,nil) if username
-        json_type = @options.fetch(:json_type)
-	      if username.nil? && password.nil?
-          @log.debug("Connecting using #{service_url}")
-          @service = OData::Service.new(service_url, :json_type => json_type)
-        else
-	        @log.debug("Connecting using #{service_url} as #{username} with a #{password.size} letter password")
-          @service = OData::Service.new(service_url, :username => username, :password => password, :json_type => json_type)
+	      if username
+          password = @options.fetch(:password)
+          @service_options[:username] = username
+          @service_options[:password] = password
+        end
+
+        @service_options[:json_type] = @options.fetch(:json_type)
+        
+        service_type = @options.fetch(:builder, :Hana)
+        @builder = "::DataMapper::Adapters::Odata::#{service_type}Builder".constantize.new
+        @log.debug("Will use builder #{@builder}")
+        
+        if service_type == :Netweaver and @options.fetch(:enable_csrf_token,false)
+          rest_options = {}
+          token_header = :x_csrf_token
+          rest_options[token_header] = "Fetch"
+          if username
+            auth = 'Basic ' + Base64.encode64("#{username}:#{password}").chomp
+            rest_options['Authorization'] = auth
+          end
+          rest_options[:json_type] = @service_options[:json_type]
+          @log.debug("Grabbing token_header with #{service_url} and #{rest_options}")
+          response = RestClient.get service_url, rest_options
+          @service_options[token_header] = response.headers.fetch(token_header)
+          @log.debug("Response to token_header request was #{response.headers.inspect}")
+          @log.debug("Will use CSRF token #{@service_options[token_header]}")
         end
         
-        @builder = "::DataMapper::Adapters::Odata::#{@options.fetch(:builder, :Hana)}Builder".constantize.new(@service)
-        @log.debug("Will use builder #{@builder}")
+        @log.debug("Connecting using #{service_url}")
+        @service = OData::Service.new(service_url, @service_options)
         
 	      @processed_classes = Hash.new
         @id_seed = 0

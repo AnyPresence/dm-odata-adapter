@@ -4,10 +4,6 @@ module DataMapper
       class BaseBuilder
         include ::DataMapper::Inflector
         
-        def initialize(odata_service)
-          @odata_service = odata_service
-        end
-        
         ### Methods that must be implemented by subclasses follow:
         
         def build_create_method_name(storage_name)
