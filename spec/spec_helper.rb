@@ -16,3 +16,7 @@ ENV['ADAPTER'] = 'odata'
 ENV['ADAPTER_SUPPORTS'] = 'all'
 
 DataMapper.finalize
+
+def heffalump_model
+  Heffalump
+end
