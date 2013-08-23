@@ -6,15 +6,11 @@ module DataMapper
             
       def initialize(name, options)
         super
-        level = 'debug'
-        DataMapper::Logger.new($stdout,level)
-        @log = DataMapper.logger
-        if level == 'debug'
-          @log.debug("Adding REST client debugging proxy")
-          RestClient.log =  $stdout
-        end
-        @service_options = {}
         @options = options
+        
+        initialize_logger 
+        
+        @service_options = {}
         scheme = @options.fetch(:scheme)
         host = @options.fetch(:host)
         port = @options.fetch(:port,nil)
@@ -58,6 +54,20 @@ module DataMapper
         @id_seed = 0
       end
       
+      def initialize_logger
+        level = 'error'
+
+        if @options[:logging_level] && %w[ off fatal error warn info debug ].include?(@options[:logging_level].downcase)
+          level = @options[:logging_level].downcase
+        end
+        DataMapper::Logger.new($stdout,level)
+        @log = DataMapper.logger
+        if level == 'debug'
+          @log.debug("Adding REST client debugging proxy")
+          RestClient.log =  $stdout
+        end
+      end
+          
       # Persists one or many new resources
       #
       # @example
