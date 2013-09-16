@@ -244,6 +244,8 @@ module DataMapper
         deleted
       end
       
-    end
+    end # class OdataAdapter
+    
+    self.send(:const_added, :OdataAdapter)
   end
 end

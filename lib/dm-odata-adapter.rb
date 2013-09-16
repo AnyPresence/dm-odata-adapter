@@ -8,4 +8,3 @@ require 'dm-odata-adapter/netweaver_builder'
 require 'dm-odata-adapter/identity_broker'
 require 'dm-odata-adapter/odata_adapter'
 
-::DataMapper::Adapters.const_added(:OdataAdapter)
