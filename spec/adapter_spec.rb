@@ -25,12 +25,12 @@ describe DataMapper::Adapters::OdataAdapter do
   describe '#create' do
     it 'should not raise any errors' do
       lambda {
-        item_model.create(:id => 'peach')
+        item_model.create(:id => 'peach', :quantity => 2)
       }.should_not raise_error
     end
 
     it 'should set the identity field for the resource' do
-      heffalump = item_model.new(:id => 'peach2')
+      heffalump = item_model.new(:id => 'peach2', :quantity => 4)
       heffalump.save
       heffalump.id.should_not be_nil
     end
@@ -38,7 +38,7 @@ describe DataMapper::Adapters::OdataAdapter do
   
   describe '#read' do
     before :all do
-      @item = item_model.create(:id => 'brownish hue')
+      @item = item_model.create(:id => 'brownish hue', :quantity => 1)
     end
 
     it 'should not raise any errors' do
@@ -54,40 +54,40 @@ describe DataMapper::Adapters::OdataAdapter do
     
   describe '#update' do
     before do
-      @item = item_model.create(:id => 'indigo')
+      @item = item_model.create(:id => 'indigo', :quantity => 2)
     end
 
     it 'should not raise any errors' do
       lambda {
-        @item.color = 'violet'
+        @item.quantity = 4
         @item.save
       }.should_not raise_error
     end
 
     it 'should not alter the identity field' do
       id = @item.id
-      @item.color = 'violet'
+      @item.quantity = 7
       @item.save
       @item.id.should == id
     end
 
     it 'should update altered fields' do
-      @item.color = 'violet'
+      @item.quantity = 8
       @item.save
-      item_model.get(*@item.key).color.should == 'violet'
+      item_model.get(*@item.key).quantity.should == 8
     end
 
     it 'should not alter other fields' do
-      color = @item.color
-      @item.num_spots = 3
+      quantity = @item.quantity
+      @item.quantity = 2
       @item.save
-      item_model.get(*@item.key).color.should == color
+      item_model.get(*@item.key).quantity.should == quantity
     end
   end
   
   describe '#delete' do
     before do
-      @item = item_model.create(:color => 'forest green')
+      @item = item_model.create(:id => 'forest green', :quantity => 2)
     end
 
     it 'should not raise any errors' do
@@ -105,45 +105,45 @@ describe DataMapper::Adapters::OdataAdapter do
 
   describe 'query matching' do
     before :all do
-      @red  = item_model.create(:color => 'red')
-      @two  = item_model.create(:num_spots => 2)
-      @five = item_model.create(:num_spots => 5)
+      @red  = item_model.create(:id => 'red')
+      @two  = item_model.create(:id => 'twosie', :quantity => 2)
+      @five = item_model.create(:id => 'fivesie', :quantity => 5)
     end
 
     describe 'conditions' do
       describe 'eql' do
         it 'should be able to search for objects included in an inclusive range of values' do
-          item_model.all(:num_spots => 1..5).should be_include(@five)
+          item_model.all(:quantity => 1..5).should be_include(@five)
         end
 
         it 'should be able to search for objects included in an exclusive range of values' do
-          item_model.all(:num_spots => 1...6).should be_include(@five)
+          item_model.all(:quantity => 1...6).should be_include(@five)
         end
 
         it 'should not be able to search for values not included in an inclusive range of values' do
-          item_model.all(:num_spots => 1..4).should_not be_include(@five)
+          item_model.all(:quantity => 1..4).should_not be_include(@five)
         end
 
         it 'should not be able to search for values not included in an exclusive range of values' do
-          item_model.all(:num_spots => 1...5).should_not be_include(@five)
+          item_model.all(:quantity => 1...5).should_not be_include(@five)
         end
       end
 
       describe 'not' do
         it 'should be able to search for objects with not equal value' do
-          item_model.all(:color.not => 'red').should_not be_include(@red)
+          item_model.all(:id.not => 'red').should_not be_include(@red)
         end
 
         it 'should include objects that are not like the value' do
-          item_model.all(:color.not => 'black').should be_include(@red)
+          item_model.all(:id.not => 'black').should be_include(@red)
         end
 
         it 'should be able to search for objects with not nil value' do
-          item_model.all(:color.not => nil).should be_include(@red)
+          item_model.all(:id.not => nil).should be_include(@red)
         end
 
         it 'should not include objects with a nil value' do
-          item_model.all(:color.not => nil).should_not be_include(@two)
+          item_model.all(:id.not => nil).should_not be_include(@two)
         end
 
         it 'should be able to search for object with a nil value using required properties' do
@@ -151,41 +151,41 @@ describe DataMapper::Adapters::OdataAdapter do
         end
 
         it 'should be able to search for objects not in an empty list (match all)' do
-          item_model.all(:color.not => []).should == [ @red, @two, @five ]
+          item_model.all(:id.not => []).should == [ @red, @two, @five ]
         end
 
         it 'should be able to search for objects in an empty list and another OR condition (match none on the empty list)' do
           item_model.all(
             :conditions => DataMapper::Query::Conditions::Operation.new(
               :or,
-              DataMapper::Query::Conditions::Comparison.new(:in, item_model.properties[:color], []),
-              DataMapper::Query::Conditions::Comparison.new(:in, item_model.properties[:num_spots], [5])
+              DataMapper::Query::Conditions::Comparison.new(:in, item_model.properties[:id], []),
+              DataMapper::Query::Conditions::Comparison.new(:in, item_model.properties[:quantity], [5])
             )
           ).should == [ @five ]
         end
 
         it 'should be able to search for objects not included in an array of values' do
-          item_model.all(:num_spots.not => [ 1, 3, 5, 7 ]).should be_include(@two)
+          item_model.all(:quantity.not => [ 1, 3, 5, 7 ]).should be_include(@two)
         end
 
         it 'should be able to search for objects not included in an array of values' do
-          item_model.all(:num_spots.not => [ 1, 3, 5, 7 ]).should_not be_include(@five)
+          item_model.all(:quantity.not => [ 1, 3, 5, 7 ]).should_not be_include(@five)
         end
 
         it 'should be able to search for objects not included in an inclusive range of values' do
-          item_model.all(:num_spots.not => 1..4).should be_include(@five)
+          item_model.all(:quantity.not => 1..4).should be_include(@five)
         end
 
         it 'should be able to search for objects not included in an exclusive range of values' do
-          item_model.all(:num_spots.not => 1...5).should be_include(@five)
+          item_model.all(:quantity.not => 1...5).should be_include(@five)
         end
 
         it 'should not be able to search for values not included in an inclusive range of values' do
-          item_model.all(:num_spots.not => 1..5).should_not be_include(@five)
+          item_model.all(:quantity.not => 1..5).should_not be_include(@five)
         end
 
         it 'should not be able to search for values not included in an exclusive range of values' do
-          item_model.all(:num_spots.not => 1...6).should_not be_include(@five)
+          item_model.all(:quantity.not => 1...6).should_not be_include(@five)
         end
       end
     end
