@@ -52,12 +52,12 @@ module DataMapper
           record = {}
           field_to_property.each do |field, property|
             name = property.name
-            next unless value = instance.send(field.to_sym)
-            DataMapper.logger.debug("#{field} = #{value}")
+            next unless value = instance.send(name)
+            DataMapper.logger.debug("#{name} = #{value}")
             if property.instance_of? DataMapper::Property::Object
               raise "Array properties are not yet supported!"
             else
-              record[field] = property.typecast(value)
+              record[name] = property.typecast(value)
             end
           end
           record

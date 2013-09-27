@@ -7,7 +7,7 @@ module DataMapper
       def initialize(name, options)
         super
         @options = options
-        
+        @registery = Hash.new 
         initialize_logger 
         
         @service_options = {}
@@ -27,7 +27,7 @@ module DataMapper
 
         @service_options[:json_type] = @options.fetch(:json_type)
         
-        service_type = @options.fetch(:builder, :Hana)
+        service_type = @options.fetch(:builder, :Default)
         @builder = "::DataMapper::Adapters::Odata::#{service_type}Builder".constantize.new
         @log.debug("Will use builder #{@builder}")
         
@@ -48,8 +48,8 @@ module DataMapper
         end
         
         @log.debug("Connecting using #{service_url}")
-        @service = OData::Service.new(service_url, @service_options)
-        
+        @service = ::Odata::Service.new(service_url, @service_options)
+        @service.registery = @registery
 	      @processed_classes = Hash.new
         @id_seed = 0
       end
@@ -90,7 +90,7 @@ module DataMapper
           serial = model.serial
           storage_name = model.storage_name(resource.repository)
           @log.debug("About to create #{model} backed by #{storage_name} using #{resource.attributes}")
-
+          register_model(model)
           begin
             create_method_name = @builder.build_create_method_name(storage_name)
             @log.debug("Built create method name #{create_method_name}")
@@ -138,6 +138,7 @@ module DataMapper
         @log.debug("Read #{query.inspect} and its model is #{query.model.inspect}")
         model = query.model
         storage_name = model.storage_name(query.repository)
+        register_model(model)
         records = []
         begin
           query_method = @builder.build_query_method_name(storage_name)
@@ -177,6 +178,7 @@ module DataMapper
         collection.select do |resource|
           model = resource.model
           serial = model.serial
+          register_model(model)
           query_method = @builder.build_query_method_name(model.storage_name(resource.repository))
           id = serial.get(resource)
           @log.debug("About to query with ID #{id}")
@@ -223,6 +225,7 @@ module DataMapper
         collection.each do |resource|
           model = resource.model
           serial = model.serial
+          register_model(model)
           query_method = @builder.build_query_method_name(model.storage_name(resource.repository))
           id = serial.get(resource)
           
@@ -242,6 +245,13 @@ module DataMapper
         end
         @log.debug("Deleted #{deleted} instances")
         deleted
+      end
+      
+      private
+      
+      def register_model(model)
+        @registery[model.to_s] = Hash[ model.properties(model.default_repository_name).map { |p| [ p.field, p ] } ]
+        DataMapper.logger.debug("#{self.class.name} Registered #{model}")
       end
       
     end # class OdataAdapter
