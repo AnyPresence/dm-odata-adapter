@@ -45,7 +45,53 @@ module DataMapper
           end
         end
         
+        def update_resource(resource, remote_instance, serial)
+          created = 0
+          model = resource.model
+          @log.debug("update_resource(#{resource}, #{remote_instance}, #{serial})")
+          if netweaver?
+            if remote_instance == true # A failed create returns true for some reason
+              @log.debug("Something went wrong while creating instance.")
+            else remote_instance.first.__metadata.has_key?(:uri) # Actual success has metadata with a URI
+              obj = object_from_remote(model,remote_instance)
+              initialize_serial(resource, obj.send(serial.property))
+              @log.debug("Created #{resource.inspect}")
+              created = 1
+            end
+          elsif microsoft?
+            obj = object_from_remote(model,remote_instance)
+            make_field_to_property_hash(model).each do |field, property|
+              name = property.field
+              next unless value = obj[name]
+              DataMapper.logger.debug("#{name} = #{value}")
+              if property.instance_of? DataMapper::Property::Object
+                raise "Array properties are not yet supported!"
+              else
+                property.set!(resource,value)
+              end
+            end
+            created = 1 unless serial.get(resource).nil?
+          else
+            raise "We should not get here"
+          end
+          created
+        end
+        
         private 
+        
+        def object_from_remote(model, remote_instance)
+          DataMapper.logger.debug("object_from_remote is about to parse\n #{remote_instance.inspect}")
+          field_to_property = make_field_to_property_hash(model)
+          record_from_remote(remote_instance, field_to_property)
+        end
+          
+        def microsoft?
+          @service_type == :Default
+        end
+        
+        def netweaver?
+          @service_type == :Netweaver
+        end
         
         def record_from_remote(instance, field_to_property)
           DataMapper.logger.debug("record_from_remote using:\n#{field_to_property}\nAnd #{instance.inspect}")
@@ -60,6 +106,7 @@ module DataMapper
               record[name] = property.typecast(value)
             end
           end
+          DataMapper.logger.debug("record_from_remote returning #{record}")
           record
         end
         

@@ -27,11 +27,11 @@ module DataMapper
 
         @service_options[:json_type] = @options.fetch(:json_type)
         
-        service_type = @options.fetch(:builder, :Default)
-        @builder = "::DataMapper::Adapters::Odata::#{service_type}Builder".constantize.new
+        @service_type = @options.fetch(:builder, :Default)
+        @builder = "::DataMapper::Adapters::Odata::#{@service_type}Builder".constantize.new
         @log.debug("Will use builder #{@builder}")
         
-        if service_type == :Netweaver and @options.fetch(:enable_csrf_token,false)
+        if @service_type == :Netweaver and @options.fetch(:enable_csrf_token,false)
           rest_options = {}
           token_header = :x_csrf_token
           rest_options[token_header] = "Fetch"
@@ -95,21 +95,12 @@ module DataMapper
             create_method_name = @builder.build_create_method_name(storage_name)
             @log.debug("Built create method name #{create_method_name}")
             the_properties = resource.attributes(key_on=:field)
-            id = generate_unique_id(resource)
-            the_properties[serial.field] = id
             @log.debug("Properties are #{the_properties.inspect}")
             instance = resource_to_remote(model, the_properties)
             @service.send(create_method_name, instance)
             remote_instance = @service.save_changes
             @log.debug("Remote instance saved_changes returned is #{remote_instance.inspect}")
-
-            if remote_instance == true # A failed create returns true for some reason
-              @log.debug("Something went wrong while creating instance.")
-            else remote_instance.first.__metadata.has_key?(:uri) # Actual success has metadata with a URI
-              initialize_serial(resource, id)
-              @log.debug("Created #{resource.inspect}")
-              created += 1
-            end
+            created += update_resource(resource, remote_instance.first, serial)
           rescue => e
             trace = e.backtrace.join("\n")
             DataMapper.logger.error("Failed to create resource: #{e.message}")  

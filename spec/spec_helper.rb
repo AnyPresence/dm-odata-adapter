@@ -17,6 +17,6 @@ ENV['ADAPTER_SUPPORTS'] = 'all'
 
 DataMapper.finalize
 
-def item_model
-  Item
+def heffalump_model
+  Heffalump
 end
