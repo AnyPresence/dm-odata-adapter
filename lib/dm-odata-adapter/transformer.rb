@@ -48,7 +48,7 @@ module DataMapper
         def update_resource(resource, remote_instance, serial)
           created = 0
           model = resource.model
-          @log.debug("update_resource(#{resource}, #{remote_instance}, #{serial})")
+          @log.debug("update_resource(#{resource.inspect}, #{remote_instance.inspect}, #{serial.inspect})")
           if netweaver?
             if remote_instance == true # A failed create returns true for some reason
               @log.debug("Something went wrong while creating instance.")
@@ -59,21 +59,22 @@ module DataMapper
               created = 1
             end
           elsif microsoft?
-            obj = object_from_remote(model,remote_instance)
             make_field_to_property_hash(model).each do |field, property|
               name = property.field
-              next unless value = obj[name]
+              next if (remote_value = remote_instance.send(name)).nil?
+              value = property.typecast(remote_value)
               DataMapper.logger.debug("#{name} = #{value}")
               if property.instance_of? DataMapper::Property::Object
                 raise "Array properties are not yet supported!"
               else
-                property.set!(resource,value)
+                property.set!(resource, value)
               end
             end
             created = 1 unless serial.get(resource).nil?
           else
             raise "We should not get here"
           end
+          @log.debug("created #{created}")
           created
         end
         
@@ -103,7 +104,7 @@ module DataMapper
             if property.instance_of? DataMapper::Property::Object
               raise "Array properties are not yet supported!"
             else
-              record[name] = property.typecast(value)
+              record[property.field] = property.typecast(value)
             end
           end
           DataMapper.logger.debug("record_from_remote returning #{record}")

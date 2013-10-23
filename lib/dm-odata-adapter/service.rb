@@ -31,9 +31,9 @@ module Odata
        for prop in properties
          prop_name = prop.name
          value = parse_value_xml(prop)
-         DataMapper.logger.debug("prop_name #{prop_name}")
+         #DataMapper.logger.debug("prop_name #{prop_name}")
          mapped_name = dm_properties.fetch(prop_name).name
-         DataMapper.logger.debug( "setting #{mapped_name} to #{value}")
+         #DataMapper.logger.debug( "setting #{mapped_name} to #{value}")
          klass.send("#{mapped_name}=", value)
        end
 

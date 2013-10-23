@@ -101,6 +101,7 @@ module DataMapper
             remote_instance = @service.save_changes
             @log.debug("Remote instance saved_changes returned is #{remote_instance.inspect}")
             created += update_resource(resource, remote_instance.first, serial)
+            @log.debug("Resource after creation is #{resource.inspect}")
           rescue => e
             trace = e.backtrace.join("\n")
             DataMapper.logger.error("Failed to create resource: #{e.message}")  
