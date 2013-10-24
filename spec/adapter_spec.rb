@@ -18,7 +18,7 @@ describe DataMapper::Adapters::OdataAdapter do
 =end
 #   Product.all.each{|h| h.destroy }
 
-   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-226-17-209.compute-1.amazonaws.com/', :path => 'DMApp/DMService.svc', :json_type => 'application/json', :logging_level => 'debug')
+   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-205-112-205.compute-1.amazonaws.com', :path => '/DMApp/DMService.svc', :json_type => 'application/json', :logging_level => 'debug')
 
   end
   

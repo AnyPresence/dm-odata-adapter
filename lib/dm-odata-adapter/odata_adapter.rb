@@ -172,21 +172,22 @@ module DataMapper
           serial = model.serial
           register_model(model)
           query_method = @builder.build_query_method_name(model.storage_name(resource.repository))
-          id = serial.get(resource)
-          @log.debug("About to query with ID #{id}")
+          id = serial.get(resource).to_s + "L" #HACK! Remove me!
+          @log.debug("About to query with #{query_method} and ID #{id}")
           @service.send(query_method, id)
           odata_instance = @service.execute.first
-          @log.debug("About to call update on #{odata_instance}")
-          odata_instance = update_remote_instance(odata_instance, attributes)
-          @service.update_object(odata_instance)
-          @log.debug("About to save #{odata_instance}")
+          @log.debug("Pulled instance #{odata_instance.inspect}")
+          update_remote_instance(odata_instance, attributes) #Set dirty attributes on existing instance
+          @log.debug("About to call update on #{odata_instance.inspect}")
+
+          @service.update_object(odata_instance) #Then save it
           result = @service.save_changes
           
           @log.debug("Result of update call #{result}")
           if result
             updated += 1
             attributes.each do |property, value|
-              property.set!(resource, property.typecast(value))
+              property.set!(resource, property.typecast(value)) #Then reflect saved changes
             end
           else
             DataMapper.logger.error("Updating #{resource} failed")

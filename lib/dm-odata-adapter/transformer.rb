@@ -34,7 +34,6 @@ module DataMapper
 	          DataMapper.logger.debug("Updating #{property.field} = #{value}")
             remote_instance.send("#{property.field}=", property.typecast(value))
           end
-          remote_instance
         end
         
         def collection_from_remote(model, array)
