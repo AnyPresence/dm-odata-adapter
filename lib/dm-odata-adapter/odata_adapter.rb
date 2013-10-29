@@ -221,7 +221,8 @@ module DataMapper
         collection.each do |resource|
           model = resource.model
           serial = model.serial
-          query_method = @builder.build_query_method_name(model.storage_name(resource.repository))
+          class_name = make_class_name(model.storage_name)
+          query_method = @builder.build_query_method_name(class_name)
           id = serial.get(resource)
           begin
             @log.debug("About to query with ID #{id}")
