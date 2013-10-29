@@ -7,7 +7,7 @@ module DataMapper
     module Odata
       module Transformer
                 
-        def transform_to_odata_remote_class(the_resource, class_name)
+        def transform_dm_resource_to_odata_remote_class(the_resource, class_name)
           hash = to_odata_hash(the_resource)
           DataMapper.logger.debug("resource_to_remote(#{class_name}, #{hash})")
           the_fields = hash.keys
@@ -17,7 +17,7 @@ module DataMapper
           DataMapper.logger.debug("Returning instance #{instance.inspect}")
           instance
         end
-
+        
         def to_odata_hash(the_resource)
           DataMapper.logger.debug("to_odata_hash(#{the_resource})")
           hash = the_resource.attributes(key_on = :field)
@@ -101,7 +101,7 @@ module DataMapper
           DataMapper.logger.debug("record_from_remote using:\n#{field_to_property}\nAnd #{instance.inspect}")
           record = {}
           field_to_property.each do |field, property|
-            name = property.name
+            name = property.field
             next unless value = instance.send(name)
             DataMapper.logger.debug("#{name} = #{value}")
             if property.instance_of? DataMapper::Property::Object

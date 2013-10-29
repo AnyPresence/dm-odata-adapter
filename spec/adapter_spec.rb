@@ -36,4 +36,21 @@ describe DataMapper::Adapters::OdataAdapter do
       heffalump.the_id.should_not be_nil
     end
   end
+  
+  describe '#read' do
+    before :all do
+      @heffalump = heffalump_model.create(:the_color => 'brownish hue')
+    end
+
+    it 'should not raise any errors' do
+      lambda {
+        heffalump_model.all()
+      }.should_not raise_error
+    end
+
+    it 'should return stuff' do
+      heffalump_model.all.should be_include(@heffalump)
+    end
+  end
+      
 end

@@ -93,7 +93,7 @@ module DataMapper
           begin
             create_method_name = @builder.build_create_method_name(storage_name)
             @log.debug("Built create method name #{create_method_name}")
-            instance = transform_to_odata_remote_class(resource, class_name)
+            instance = transform_dm_resource_to_odata_remote_class(resource, class_name)
             @log.debug("transformed instance is #{instance.inspect}")
             @class_registry[class_name] = instance.class unless @class_registry.has_key? class_name
             @service.send(create_method_name, instance)
@@ -128,11 +128,11 @@ module DataMapper
       def read(query)
         @log.debug("Read #{query.inspect} and its model is #{query.model.inspect}")
         model = query.model
-        storage_name = model.storage_name(query.repository)
-        #register_model(model)
+        storage_name = model.storage_name
+        class_name = make_class_name(storage_name)
         records = []
         begin
-          query_method = @builder.build_query_method_name(storage_name)
+          query_method = @builder.build_query_method_name(class_name)
           @log.debug("Using query method #{query_method}")
           query_builder = @service.send(query_method)
           @builder.build_query(query_builder, query)
