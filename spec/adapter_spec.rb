@@ -18,9 +18,22 @@ describe DataMapper::Adapters::OdataAdapter do
 =end
 #   Product.all.each{|h| h.destroy }
 
-   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-205-112-205.compute-1.amazonaws.com', :path => '/DMApp/DMService.svc', :json_type => 'application/json', :logging_level => 'debug')
+   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-224-12-12.compute-1.amazonaws.com', :path => '/DMApp/DMService.svc', :json_type => 'application/json',:username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'], :logging_level => 'debug')
 
   end
   
-  it_should_behave_like 'An Adapter'
+  describe '#create' do
+    it 'should not raise any errors' do
+      lambda {
+        heffalump_model.create(:the_color => 'peach')
+      }.should_not raise_error
+    end
+
+    it 'should set the identity field for the resource' do
+      heffalump = heffalump_model.new(:the_color => 'peach')
+      heffalump.the_id.should be_nil
+      heffalump.save
+      heffalump.the_id.should_not be_nil
+    end
+  end
 end

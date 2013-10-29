@@ -7,41 +7,37 @@ module DataMapper
     module Odata
       module Transformer
                 
-        def resource_to_remote(model, hash)
-          DataMapper.logger.debug("resource_to_remote(#{model}, #{hash})")
-          klass_name = build_class_name(model)
-          klass = @processed_classes[klass_name]
-          if klass.nil?
-            all_properties = make_field_to_property_hash(model)
-	          attributes = [*all_properties.keys.select{|k| k.to_sym}]
-            klass = Container.const_set(klass_name.to_sym,Object.class)
-	          klass.class_eval do
-  	          attr_accessor *attributes
-            end
-            DataMapper.logger.debug("Caching new class for model #{model}")
-            @processed_classes[klass_name] = klass.new
-          else
-            DataMapper.logger.debug("Cache has instance for model #{model}")
-          end
-          instance = to_ruby_odata_instance(Container.const_get(klass_name).new, hash)
-          DataMapper.logger.debug("Returning instance #{instance.instance_variables}")
+        def transform_to_odata_remote_class(the_resource, class_name)
+          hash = to_odata_hash(the_resource)
+          DataMapper.logger.debug("resource_to_remote(#{class_name}, #{hash})")
+          the_fields = hash.keys
+          DataMapper.logger.debug("the_fields are #{the_fields.inspect}")
+          instance = create_odata_class(class_name, the_fields)
+          instance.read_hash(hash)
+          DataMapper.logger.debug("Returning instance #{instance.inspect}")
           instance
         end
-        
-        def update_remote_instance(remote_instance, hash)
-          DataMapper.logger.debug("fill_remote_instance is about to update \nInstance: #{remote_instance}\nWith: #{hash.inspect}")
-          hash.each do |property, value|
-	          DataMapper.logger.debug("Updating #{property.field} = #{value}")
-            remote_instance.send("#{property.field}=", property.typecast(value))
-          end
+
+        def to_odata_hash(the_resource)
+          DataMapper.logger.debug("to_odata_hash(#{the_resource})")
+          hash = the_resource.attributes(key_on = :field)
+          hash['__metadata'] = the_resource.__metadata unless the_resource.__metadata.nil?
+          DataMapper.logger.debug("to_odata_hash returning #{hash.inspect}")
+          hash
         end
-        
-        def collection_from_remote(model, array)
-          DataMapper.logger.debug("collection_from_remote is about to parse\n #{array.inspect}")
-          field_to_property = make_field_to_property_hash(model)
-          array.collect do |remote_instance|
-            record_from_remote(remote_instance, field_to_property)
-          end
+
+        def create_odata_class(class_name, the_fields)
+          Object.const_set(class_name, Class.new {
+            attr_accessor *the_fields
+
+            define_method :read_hash do |hash|
+              hash.each do |field, value|
+                self.send "#{field}=", value
+              end
+            end
+          }) unless defined?(class_name) and class_name.respond_to? :read_hash
+
+          Object.const_get(class_name).new
         end
         
         def update_resource(resource, remote_instance, serial)
@@ -75,6 +71,14 @@ module DataMapper
           end
           @log.debug("created #{created}")
           created
+        end
+        
+        def collection_from_remote(model, array)
+          DataMapper.logger.debug("collection_from_remote is about to parse\n #{array.inspect}")
+          field_to_property = make_field_to_property_hash(model)
+          array.collect do |remote_instance|
+            record_from_remote(remote_instance, field_to_property)
+          end
         end
         
         private 
@@ -115,7 +119,7 @@ module DataMapper
         end
         
         def build_class_name(model)
-          "#{model}"
+          "Internal#{model}"
 	      end
 	      
 	      def to_ruby_odata_instance(instance, hash)

@@ -3,6 +3,8 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in dm-web-adapter.gemspec
 gemspec
 
+gem 'ruby_odata', :git => 'git://github.com/nasali/ruby_odata.git'
+
 group :test do
   DM_VERSION = '~> 1.2.0'
   

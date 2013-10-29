@@ -18,5 +18,5 @@ ENV['ADAPTER_SUPPORTS'] = 'all'
 DataMapper.finalize
 
 def heffalump_model
-  Heffalump
+  V2::Floppy
 end

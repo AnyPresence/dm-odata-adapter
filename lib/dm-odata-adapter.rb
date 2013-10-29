@@ -1,8 +1,9 @@
 require 'dm-core'
+require 'dm-serializer'
 require 'ruby_odata'
 require 'securerandom'
-require 'dm-odata-adapter/ruby_odata/service'
-require 'dm-odata-adapter/ruby_odata/query'
+require 'dm-odata-adapter/resource'
+
 require 'dm-odata-adapter/transformer'
 require 'dm-odata-adapter/base_builder'
 require 'dm-odata-adapter/default_builder'

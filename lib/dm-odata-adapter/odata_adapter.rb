@@ -48,9 +48,8 @@ module DataMapper
         end
         
         @log.debug("Connecting using #{service_url}")
-        @service = ::Odata::Service.new(service_url, @service_options)
-        @service.registery = @registery
-	      @processed_classes = Hash.new
+        @service = ::OData::Service.new(service_url, @service_options)
+        @class_registry = {}
         @id_seed = 0
       end
       
@@ -88,15 +87,15 @@ module DataMapper
         resources.each do |resource|
           model = resource.model
           serial = model.serial
-          storage_name = model.storage_name(resource.repository)
+          storage_name = model.storage_name
+          class_name = make_class_name(storage_name)
           @log.debug("About to create #{model} backed by #{storage_name} using #{resource.attributes}")
-          register_model(model)
           begin
             create_method_name = @builder.build_create_method_name(storage_name)
             @log.debug("Built create method name #{create_method_name}")
-            the_properties = resource.attributes(key_on=:field)
-            @log.debug("Properties are #{the_properties.inspect}")
-            instance = resource_to_remote(model, the_properties)
+            instance = transform_to_odata_remote_class(resource, class_name)
+            @log.debug("transformed instance is #{instance.inspect}")
+            @class_registry[class_name] = instance.class unless @class_registry.has_key? class_name
             @service.send(create_method_name, instance)
             remote_instance = @service.save_changes
             @log.debug("Remote instance saved_changes returned is #{remote_instance.inspect}")
@@ -130,7 +129,7 @@ module DataMapper
         @log.debug("Read #{query.inspect} and its model is #{query.model.inspect}")
         model = query.model
         storage_name = model.storage_name(query.repository)
-        register_model(model)
+        #register_model(model)
         records = []
         begin
           query_method = @builder.build_query_method_name(storage_name)
@@ -170,19 +169,24 @@ module DataMapper
         collection.select do |resource|
           model = resource.model
           serial = model.serial
-          register_model(model)
+          #register_model(model)
           query_method = @builder.build_query_method_name(model.storage_name(resource.repository))
-          id = serial.get(resource).to_s + "L" #HACK! Remove me!
+          id = serial.get(resource)
           @log.debug("About to query with #{query_method} and ID #{id}")
           @service.send(query_method, id)
           odata_instance = @service.execute.first
-          @log.debug("Pulled instance #{odata_instance.inspect}")
+          @log.debug("Pulled instance #{odata_instance.inspect} with methods #{odata_instance.methods.inspect}")
           update_remote_instance(odata_instance, attributes) #Set dirty attributes on existing instance
           @log.debug("About to call update on #{odata_instance.inspect}")
 
           @service.update_object(odata_instance) #Then save it
-          result = @service.save_changes
-          
+          result = 
+          begin
+            @service.save_changes
+          rescue => f
+            trace = f.backtrace.join("\n")
+            DataMapper.logger.error("Failed with #{f.inspect} because of #{trace}")            
+          end
           @log.debug("Result of update call #{result}")
           if result
             updated += 1
@@ -218,10 +222,8 @@ module DataMapper
         collection.each do |resource|
           model = resource.model
           serial = model.serial
-          register_model(model)
           query_method = @builder.build_query_method_name(model.storage_name(resource.repository))
           id = serial.get(resource)
-          
           begin
             @log.debug("About to query with ID #{id}")
             @service.send(query_method, id)
@@ -241,6 +243,10 @@ module DataMapper
       end
       
       private
+      
+      def make_class_name(name)
+        name.classify
+      end
       
       def register_model(model)
         @registery[model.to_s] = Hash[ model.properties(model.default_repository_name).map { |p| [ p.field, p ] } ]
