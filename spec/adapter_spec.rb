@@ -19,7 +19,7 @@ describe DataMapper::Adapters::OdataAdapter do
 #   Product.all.each{|h| h.destroy }
 
    @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-224-12-12.compute-1.amazonaws.com', :path => '/DMApp/DMService.svc', :json_type => 'application/json',:username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'], :logging_level => 'debug')
-
+   heffalump_model.all.each{|h| h.destroy }
   end
   
   describe '#create' do
