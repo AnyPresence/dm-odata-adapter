@@ -247,12 +247,6 @@ module DataMapper
       def make_class_name(name)
         name.classify
       end
-      
-      def register_model(model)
-        @registery[model.to_s] = Hash[ model.properties(model.default_repository_name).map { |p| [ p.field, p ] } ]
-        DataMapper.logger.debug("#{self.class.name} Registered #{model}")
-      end
-      
     end # class OdataAdapter
     
     self.send(:const_added, :OdataAdapter)

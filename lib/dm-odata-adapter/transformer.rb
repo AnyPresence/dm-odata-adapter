@@ -33,35 +33,6 @@ module DataMapper
           instance
         end
         
-        def to_odata_hash(the_resource)
-          DataMapper.logger.debug("to_odata_hash(#{the_resource})")
-          hash = the_resource.attributes(key_on = :field)
-          hash['__metadata'] = the_resource.__metadata unless the_resource.__metadata.nil?
-          DataMapper.logger.debug("to_odata_hash returning #{hash.inspect}")
-          hash
-        end
-
-        def create_odata_class(class_name, the_fields)
-          Container.const_set(class_name, Class.new {
-            attr_accessor *the_fields
-
-            define_method :read_hash do |hash|
-              hash.each do |field, value|
-                self.send "#{field}=", value
-              end
-            end
-            
-            define_method :to_s do
-              "#{self.class} " + the_fields.collect do |field|
-                "#{field}:#{self.send(field).to_s}"
-              end.join(', ')
-            end
-            
-          })
-          DataMapper.logger.debug("Created new class #{class_name}")
-          Container.const_get(class_name).new
-        end
-        
         def update_resource(resource, remote_instance, serial)
           updated = 0
           model = resource.model
@@ -105,6 +76,35 @@ module DataMapper
         
         private 
         
+        def to_odata_hash(the_resource)
+          DataMapper.logger.debug("to_odata_hash(#{the_resource})")
+          hash = the_resource.attributes(key_on = :field)
+          hash['__metadata'] = the_resource.__metadata unless the_resource.__metadata.nil?
+          DataMapper.logger.debug("to_odata_hash returning #{hash.inspect}")
+          hash
+        end
+
+        def create_odata_class(class_name, the_fields)
+          Container.const_set(class_name, Class.new {
+            attr_accessor *the_fields
+
+            define_method :read_hash do |hash|
+              hash.each do |field, value|
+                self.send "#{field}=", value
+              end
+            end
+            
+            define_method :to_s do
+              "#{self.class} " + the_fields.collect do |field|
+                "#{field}:#{self.send(field).to_s}"
+              end.join(', ')
+            end
+            
+          })
+          DataMapper.logger.debug("Created new class #{class_name}")
+          Container.const_get(class_name).new
+        end
+        
         def object_from_remote(model, remote_instance)
           DataMapper.logger.debug("object_from_remote is about to parse\n #{remote_instance.inspect}")
           field_to_property = make_field_to_property_hash(model)
@@ -140,10 +140,6 @@ module DataMapper
           Hash[ model.properties(model.default_repository_name).map { |p| [ p.field, p ] } ]
         end
         
-        def build_class_name(model)
-          "Internal#{model}"
-	      end
-	      
 	      def to_ruby_odata_instance(instance, hash)
 	        DataMapper.logger.debug("to_ruby_odata_instance called with #{instance.instance_variables} and #{hash.inspect}")
 	        hash.each do |field, value|
