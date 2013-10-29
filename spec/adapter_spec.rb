@@ -52,5 +52,36 @@ describe DataMapper::Adapters::OdataAdapter do
       heffalump_model.all.should be_include(@heffalump)
     end
   end
-      
+  describe '#update' do
+    before do
+      @heffalump = heffalump_model.create(:the_color => 'indigo')
+    end
+
+    it 'should not raise any errors' do
+      lambda {
+        @heffalump.the_color = 'violet'
+        @heffalump.save
+      }.should_not raise_error
+    end
+
+    it 'should not alter the identity field' do
+      id = @heffalump.the_id
+      @heffalump.the_color = 'violet'
+      @heffalump.save
+      @heffalump.the_id.should == id
+    end
+
+    it 'should update altered fields' do
+      @heffalump.the_color = 'violet'
+      @heffalump.save
+      heffalump_model.get(*@heffalump.key).the_color.should == 'violet'
+    end
+
+    it 'should not alter other fields' do
+      color = @heffalump.the_color
+      @heffalump.number_of_spots = 3
+      @heffalump.save
+      heffalump_model.get(*@heffalump.key).the_color.should == color
+    end
+  end   
 end

@@ -7,12 +7,27 @@ module DataMapper
     module Odata
       module Transformer
                 
+        def update_remote_instance(odata_instance, attributes)
+          attributes.each do |property, value|
+            odata_instance.send("#{property.field}=", value)
+          end
+        end
+        
         def transform_dm_resource_to_odata_remote_class(the_resource, class_name)
           hash = to_odata_hash(the_resource)
           DataMapper.logger.debug("resource_to_remote(#{class_name}, #{hash})")
-          the_fields = hash.keys
+          the_fields = the_resource.model.properties.map { |p| p.field.to_sym }
           DataMapper.logger.debug("the_fields are #{the_fields.inspect}")
-          instance = create_odata_class(class_name, the_fields)
+          
+          if(@class_registry.has_key?(class_name))
+            instance = @class_registry.fetch(class_name)
+            DataMapper.logger.debug("FOUND #{class_name} in registry")
+          else
+            instance = create_odata_class(class_name, the_fields)
+            @class_registry[class_name] = instance
+            DataMapper.logger.debug("REGISTERED #{class_name} #{instance}")
+          end
+          
           instance.read_hash(hash)
           DataMapper.logger.debug("Returning instance #{instance.inspect}")
           instance
@@ -27,7 +42,7 @@ module DataMapper
         end
 
         def create_odata_class(class_name, the_fields)
-          Object.const_set(class_name, Class.new {
+          Container.const_set(class_name, Class.new {
             attr_accessor *the_fields
 
             define_method :read_hash do |hash|
@@ -35,13 +50,20 @@ module DataMapper
                 self.send "#{field}=", value
               end
             end
-          }) unless defined?(class_name) and class_name.respond_to? :read_hash
-
-          Object.const_get(class_name).new
+            
+            define_method :to_s do
+              "#{self.class} " + the_fields.collect do |field|
+                "#{field}:#{self.send(field).to_s}"
+              end.join(', ')
+            end
+            
+          })
+          DataMapper.logger.debug("Created new class #{class_name}")
+          Container.const_get(class_name).new
         end
         
         def update_resource(resource, remote_instance, serial)
-          created = 0
+          updated = 0
           model = resource.model
           @log.debug("update_resource(#{resource.inspect}, #{remote_instance.inspect}, #{serial.inspect})")
           if netweaver?
@@ -51,7 +73,7 @@ module DataMapper
               obj = object_from_remote(model,remote_instance)
               initialize_serial(resource, obj.send(serial.property))
               @log.debug("Created #{resource.inspect}")
-              created = 1
+              updated = 1
             end
           elsif microsoft?
             make_field_to_property_hash(model).each do |field, property|
@@ -65,12 +87,12 @@ module DataMapper
                 property.set!(resource, value)
               end
             end
-            created = 1 unless serial.get(resource).nil?
+            updated = 1 unless serial.get(resource).nil?
           else
             raise "We should not get here"
           end
-          @log.debug("created #{created}")
-          created
+          @log.debug("updated #{updated}")
+          updated
         end
         
         def collection_from_remote(model, array)

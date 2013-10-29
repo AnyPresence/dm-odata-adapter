@@ -169,8 +169,8 @@ module DataMapper
         collection.select do |resource|
           model = resource.model
           serial = model.serial
-          #register_model(model)
-          query_method = @builder.build_query_method_name(model.storage_name(resource.repository))
+          class_name = make_class_name(model.storage_name)
+          query_method = @builder.build_query_method_name(class_name)
           id = serial.get(resource)
           @log.debug("About to query with #{query_method} and ID #{id}")
           @service.send(query_method, id)
@@ -180,13 +180,12 @@ module DataMapper
           @log.debug("About to call update on #{odata_instance.inspect}")
 
           @service.update_object(odata_instance) #Then save it
-          result = 
-          begin
-            @service.save_changes
-          rescue => f
-            trace = f.backtrace.join("\n")
-            DataMapper.logger.error("Failed with #{f.inspect} because of #{trace}")            
-          end
+          result = begin
+                    @service.save_changes
+                   rescue => f
+                     trace = f.backtrace.join("\n")
+                     DataMapper.logger.error("Failed with #{f.inspect} because of #{trace}")            
+                   end
           @log.debug("Result of update call #{result}")
           if result
             updated += 1
