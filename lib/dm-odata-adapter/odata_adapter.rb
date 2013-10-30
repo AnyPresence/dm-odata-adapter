@@ -101,8 +101,8 @@ module DataMapper
             @log.debug("Resource after creation is #{resource.inspect}")
           rescue => e
             trace = e.backtrace.join("\n")
-            DataMapper.logger.error("Failed to create resource: #{e.message}")  
-            DataMapper.logger.error(trace)  
+            @log.error("Failed to create resource: #{e.message}")  
+            @log.error(trace)  
           end
         end
         
@@ -141,8 +141,8 @@ module DataMapper
           @log.debug("Records are #{records.inspect}")
         rescue => e
           trace = e.backtrace.join("\n")
-          DataMapper.logger.error("Failed to query: #{e.message}")  
-          DataMapper.logger.error(trace)
+          @log.error("Failed to query: #{e.message}")  
+          @log.error(trace)
         end
         return records
       end
@@ -187,9 +187,10 @@ module DataMapper
           @service.update_object(odata_instance) #Then save it
           result = begin
                     @service.save_changes
-                   rescue => f
-                     trace = f.backtrace.join("\n")
-                     DataMapper.logger.error("Failed with #{f.inspect} because of #{trace}")            
+                   rescue => error
+                     trace = error.backtrace.join("\n")
+                     @log.error("Failed with #{error}")            
+                     @log.error(trace)
                    end
           @log.debug("Result of update call #{result}")
           if result
@@ -198,7 +199,7 @@ module DataMapper
               property.set!(resource, property.typecast(value)) #Then reflect saved changes
             end
           else
-            DataMapper.logger.error("Updating #{resource} failed")
+            @log.error("Updating #{resource} failed")
           end
           
         end
@@ -241,7 +242,7 @@ module DataMapper
             @log.debug("Result of delete is #{result}")
             deleted += 1 if result
           rescue => e
-            DataMapper.logger.error("Failure while deleting #{e.inspect}")
+            @log.error("Failure while deleting #{e.inspect}")
           end
         end
         @log.debug("Deleted #{deleted} instances")
