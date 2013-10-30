@@ -16,18 +16,8 @@ module DataMapper
         def transform_dm_resource_to_odata_remote_class(the_resource, class_name)
           hash = to_odata_hash(the_resource)
           DataMapper.logger.debug("resource_to_remote(#{class_name}, #{hash})")
-          the_fields = the_resource.model.properties.map { |p| p.field.to_sym }
-          DataMapper.logger.debug("the_fields are #{the_fields.inspect}")
-          
-          if(@class_registry.has_key?(class_name))
-            instance = @class_registry.fetch(class_name)
-            DataMapper.logger.debug("FOUND #{class_name} in registry")
-          else
-            instance = create_odata_class(class_name, the_fields)
-            @class_registry[class_name] = instance
-            DataMapper.logger.debug("REGISTERED #{class_name} #{instance}")
-          end
-          
+          the_fields = the_resource.model.properties.map { |p| p.field }
+          instance = create_odata_class(class_name, the_fields).new
           instance.read_hash(hash)
           DataMapper.logger.debug("Returning instance #{instance.inspect}")
           instance
@@ -74,6 +64,20 @@ module DataMapper
           end
         end
         
+        def register_model(model, class_name)
+          DataMapper.logger.debug("register_model(#{model}, #{class_name})")
+          the_fields = model.properties.map { |p| p.field }
+          DataMapper.logger.debug("the_fields are #{the_fields.inspect}")
+          return nil
+          if(@class_registry.has_key?(model))
+            clazz = @class_registry.fetch(model)
+            DataMapper.logger.debug("FOUND #{model} in registry as #{clazz.new.inspect}")
+          else
+            @class_registry[model] = create_odata_class(class_name, the_fields)
+            DataMapper.logger.debug("REGISTERED #{model} #{@class_registry[class_name]}")
+          end
+        end
+        
         private 
         
         def to_odata_hash(the_resource)
@@ -85,24 +89,25 @@ module DataMapper
         end
 
         def create_odata_class(class_name, the_fields)
-          Container.const_set(class_name, Class.new {
-            attr_accessor *the_fields
+          klass = Object.const_set(class_name,Class.new) 
 
+          klass.class_eval do
+            attr_accessor *the_fields
+            
             define_method :read_hash do |hash|
               hash.each do |field, value|
                 self.send "#{field}=", value
               end
             end
             
-            define_method :to_s do
-              "#{self.class} " + the_fields.collect do |field|
+            define_method :inspect do
+              "#{self} #{self.class} " + the_fields.collect do |field|
                 "#{field}:#{self.send(field).to_s}"
               end.join(', ')
             end
-            
-          })
-          DataMapper.logger.debug("Created new class #{class_name}")
-          Container.const_get(class_name).new
+          end
+          DataMapper.logger.debug("Created new class #{class_name} as #{klass.new.inspect} with #{the_fields.inspect}")
+          klass
         end
         
         def object_from_remote(model, remote_instance)

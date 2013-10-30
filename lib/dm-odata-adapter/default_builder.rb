@@ -19,6 +19,10 @@ module DataMapper
           end
         end
         
+        def build_empty_check(subject)
+          "#{subject} eq ''"
+        end
+        
         def build_null_check(subject)
           "#{subject} eq null "
         end

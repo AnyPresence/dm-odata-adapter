@@ -7,9 +7,9 @@ module DataMapper
       def initialize(name, options)
         super
         @options = options
-        @registery = Hash.new 
         initialize_logger 
-        
+        @class_registry = {}
+        @id_seed = 0
         @service_options = {}
         scheme = @options.fetch(:scheme)
         host = @options.fetch(:host)
@@ -49,8 +49,6 @@ module DataMapper
         
         @log.debug("Connecting using #{service_url}")
         @service = ::OData::Service.new(service_url, @service_options)
-        @class_registry = {}
-        @id_seed = 0
       end
       
       def initialize_logger
@@ -89,13 +87,13 @@ module DataMapper
           serial = model.serial
           storage_name = model.storage_name
           class_name = make_class_name(storage_name)
+          register_model(model, class_name)
           @log.debug("About to create #{model} backed by #{storage_name} using #{resource.attributes}")
           begin
             create_method_name = @builder.build_create_method_name(storage_name)
             @log.debug("Built create method name #{create_method_name}")
             instance = transform_dm_resource_to_odata_remote_class(resource, class_name)
             @log.debug("transformed instance is #{instance.inspect}")
-            @class_registry[class_name] = instance.class unless @class_registry.has_key? class_name
             @service.send(create_method_name, instance)
             remote_instance = @service.save_changes
             @log.debug("Remote instance saved_changes returned is #{remote_instance.inspect}")
@@ -129,9 +127,11 @@ module DataMapper
         @log.debug("Read #{query.inspect} and its model is #{query.model.inspect}")
         model = query.model
         storage_name = model.storage_name
-        class_name = make_class_name(storage_name)
         records = []
         begin
+          class_name = make_class_name(storage_name)
+          register_model(model, class_name)
+          
           query_method = @builder.build_query_method_name(class_name)
           @log.debug("Using query method #{query_method}")
           query_builder = @service.send(query_method)
@@ -170,10 +170,15 @@ module DataMapper
           model = resource.model
           serial = model.serial
           class_name = make_class_name(model.storage_name)
+          register_model(model, class_name)
           query_method = @builder.build_query_method_name(class_name)
           id = serial.get(resource)
           @log.debug("About to query with #{query_method} and ID #{id}")
-          @service.send(query_method, id)
+          begin 
+            @service.send(query_method, id)
+          rescue => x
+            @log.error("ERROR! #{x} " + x.backtrace.join("\n"))
+          end
           odata_instance = @service.execute.first
           @log.debug("Pulled instance #{odata_instance.inspect} with methods #{odata_instance.methods.inspect}")
           update_remote_instance(odata_instance, attributes) #Set dirty attributes on existing instance
@@ -222,6 +227,7 @@ module DataMapper
           model = resource.model
           serial = model.serial
           class_name = make_class_name(model.storage_name)
+          register_model(model, class_name)
           query_method = @builder.build_query_method_name(class_name)
           id = serial.get(resource)
           begin

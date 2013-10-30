@@ -88,9 +88,12 @@ module DataMapper
         end
         
         def build_array_include_comparison(query_string, array, subject)
-          if array.empty?
-            raise "Unsupported query feature!" unless subject.instance_of? String
-            query_string << build_null_check(subject)
+          if array.empty?    
+            query_string <<  if subject.instance_of? String          
+              build_empty_check(subject) 
+            else
+              build_null_check(subject)
+            end
           else
             ors = array.collect do |value|
               build_equal_check(subject, value)
