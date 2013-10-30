@@ -28,7 +28,7 @@ module DataMapper
         @service_options[:json_type] = @options.fetch(:json_type)
         
         @service_type = @options.fetch(:builder, :Default)
-        @builder = "::DataMapper::Adapters::Odata::#{@service_type}Builder".constantize.new
+        @builder = "::DataMapper::Adapters::Odata::#{@service_type.to_s}Builder".constantize.new
         @log.debug("Will use builder #{@builder}")
         
         if @service_type == :Netweaver and @options.fetch(:enable_csrf_token,false)
