@@ -117,11 +117,15 @@ module DataMapper
         end
           
         def microsoft?
-          @service_type == 'Microsoft'
+          @service_type.to_s.downcase == 'microsoft'
         end
         
         def netweaver?
-          @service_type == 'Netweaver'
+          @service_type.to_s.downcase == 'netweaver'
+        end
+        
+        def hana?
+          @service_type.to_s.downcase == 'hana'
         end
         
         def record_from_remote(instance, field_to_property)

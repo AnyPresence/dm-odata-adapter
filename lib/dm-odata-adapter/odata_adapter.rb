@@ -29,7 +29,7 @@ module DataMapper
         
         @service_type = @options.fetch(:builder, 'Microsoft')
         @log.debug("Service type is #{@service_type.inspect}")
-        @builder = "::DataMapper::Adapters::Odata::#{@service_type.to_s}Builder".constantize.new
+        @builder = "::DataMapper::Adapters::Odata::#{@service_type.to_s.classify}Builder".constantize.new
         @log.debug("Will use builder #{@builder}")
         
         if @service_type == 'Netweaver' and @options.fetch(:enable_csrf_token,false)
