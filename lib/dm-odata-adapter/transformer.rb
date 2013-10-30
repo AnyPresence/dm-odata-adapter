@@ -117,11 +117,11 @@ module DataMapper
         end
           
         def microsoft?
-          @service_type == :Default
+          @service_type == 'Microsoft'
         end
         
         def netweaver?
-          @service_type == :Netweaver
+          @service_type == 'Netweaver'
         end
         
         def record_from_remote(instance, field_to_property)

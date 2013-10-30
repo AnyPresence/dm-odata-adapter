@@ -1,7 +1,7 @@
 module DataMapper
   module Adapters
     module Odata
-      class DefaultBuilder < BaseBuilder
+      class MicrosoftBuilder < BaseBuilder
         
         def build_create_method_name(storage_name)
           "AddTo#{build_collection_name(storage_name)}".to_sym

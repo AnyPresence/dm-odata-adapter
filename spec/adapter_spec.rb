@@ -5,10 +5,10 @@ describe DataMapper::Adapters::OdataAdapter do
   before :all do
 
 =begin #Setup for HANA xsodata source
-   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-221-211-251.compute-1.amazonaws.com', :port => 8000, :path => '/datamapper/datamapper/datamapper.xsodata', :username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'], :json_type => 'application/json;charset=utf-8', :builder => :Hana, :logging_level => 'debug')
+   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-54-221-211-251.compute-1.amazonaws.com', :port => 8000, :path => '/datamapper/datamapper/datamapper.xsodata', :username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'], :json_type => 'application/json;charset=utf-8', :builder => 'Hana', :logging_level => 'debug')
 =end   
 =begin #Setup for NetWeaver OData source
-   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'https', :host => 'sapes1.sapdevcenter.com', :path => '/sap/opu/odata/sap/ZGWSAMPLE_SRV/', :username => ENV['NETWEAVER_GATEWAY_USERNAME'], :password => ENV['NETWEAVER_GATEWAY_PASSWORD'], :json_type => 'application/json', :builder => :Netweaver, :enable_csrf_token => true, :logging_level => 'debug')
+   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'https', :host => 'sapes1.sapdevcenter.com', :path => '/sap/opu/odata/sap/ZGWSAMPLE_SRV/', :username => ENV['NETWEAVER_GATEWAY_USERNAME'], :password => ENV['NETWEAVER_GATEWAY_PASSWORD'], :json_type => 'application/json', :builder => 'Netweaver', :enable_csrf_token => true, :logging_level => 'debug')
   
    service_url = "https://sapes1.sapdevcenter.com/sap/opu/odata/sap/ZGWSAMPLE_SRV/" 
    @service = OData::Service.new(service_url, :username => ENV['NETWEAVER_GATEWAY_USERNAME'], :password => ENV['NETWEAVER_GATEWAY_PASSWORD'])
@@ -18,7 +18,7 @@ describe DataMapper::Adapters::OdataAdapter do
 =end
 #   Product.all.each{|h| h.destroy }
 
-   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-50-17-10-15.compute-1.amazonaws.com', :path => '/DMApp/DMService.svc', :json_type => 'application/json',:username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'])
+   @adapter = DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => 'ec2-50-17-10-15.compute-1.amazonaws.com', :path => '/DMApp/DMService.svc', :json_type => 'application/json', :builder => 'Microsoft', :username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'])
    heffalump_model.all.each{|h| h.destroy }
   end
   

@@ -7,7 +7,7 @@ While support for Microsoft type implementations is fairly complete, support for
 Usage
 ================
 
-To use the adapter against a Microsoft backed implementation, setup a DataMapper adapter like so:
+To use the adapter against a Microsoft backed implementation, which is the default, setup a DataMapper adapter like so:
 ```
 DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => ENV['ODATA_HOST'], :path => ENV['ODATA_PATH'], :json_type => 'application/json', :username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'])
 
@@ -15,5 +15,5 @@ DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => ENV[
 To specify other implementations, you would use :builder configuration option. For example, using an SAP HANA backed service looks something like the following:
 
 ```
-DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => ENV['ODATA_HOST'], :port => 8000, :path => ENV['ODATA_PATH'], :username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'], :json_type => 'application/json;charset=utf-8', :builder => :Hana)
+DataMapper.setup(:default, :adapter => 'odata', :scheme => 'http', :host => ENV['ODATA_HOST'], :port => 8000, :path => ENV['ODATA_PATH'], :username => ENV['ODATA_USERNAME'], :password => ENV['ODATA_PASSWORD'], :json_type => 'application/json;charset=utf-8', :builder => 'Hana')
 ```
