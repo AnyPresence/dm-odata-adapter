@@ -28,6 +28,7 @@ module DataMapper
         @service_options[:json_type] = @options.fetch(:json_type)
         
         @service_type = @options.fetch(:builder, :Default)
+        @log.debug("Service type is #{@service_type.inspect}")
         @builder = "::DataMapper::Adapters::Odata::#{@service_type.to_s}Builder".constantize.new
         @log.debug("Will use builder #{@builder}")
         
